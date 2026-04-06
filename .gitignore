@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Frontend build output
+frontend/dist/
+dist/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Database & runtime cache (ephemeral — not needed in git)
+backend/trade_journal.db
+backend/scan_cache.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
