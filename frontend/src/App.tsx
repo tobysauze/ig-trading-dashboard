@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+
 type Signal = {
   name: string; epic: string; yahoo: string; market_type: string;
   current_price: number; signal_type: string; composite_score: number;
@@ -109,7 +111,7 @@ function App() {
 
   const fetchScan = useCallback(async () => {
     try {
-      const r = await fetch('/api/scan/latest')
+      const r = await fetch(`${API_BASE}/api/scan/latest`)
       if (r.ok) { const d = await r.json(); if (d.signals) setScan(d) }
     } catch {}
   }, [])
@@ -121,7 +123,7 @@ function App() {
     setProgress({ status: 'running', completed: 0, total: fullScan ? 248 : 50, current: '' })
     try {
       const limitParam = fullScan ? '' : '&limit=50'
-      const r = await fetch(`/api/scan?scan_mode=${scanMode}${limitParam}`, {
+      const r = await fetch(`${API_BASE}/api/scan?scan_mode=${scanMode}${limitParam}`, {
         method: 'POST',
         signal: AbortSignal.timeout(fullScan ? 900000 : 300000),
       })
@@ -139,7 +141,7 @@ function App() {
   const openDetail = async (sig: Signal) => {
     setSelectedSignal(sig)
     try {
-      const r = await fetch(`/api/trade-rec?epic=${sig.epic}&account_size=${accountSize}&risk_pct=${riskPct}&mode=spread_bet`)
+      const r = await fetch(`${API_BASE}/api/trade-rec?epic=${sig.epic}&account_size=${accountSize}&risk_pct=${riskPct}&mode=spread_bet`)
       if (r.ok) setTradeRec(await r.json())
     } catch {}
   }
@@ -164,8 +166,8 @@ function App() {
   const loadJournal = async () => {
     try {
       const [t, s] = await Promise.all([
-        fetch('/api/journal/history').then(r => r.json()),
-        fetch('/api/journal/stats').then(r => r.json()),
+        fetch(`${API_BASE}/api/journal/history`).then(r => r.json()),
+        fetch(`${API_BASE}/api/journal/stats`).then(r => r.json()),
       ])
       setJournalTrades(Array.isArray(t) ? t : [])
       setJournalStats(s)
