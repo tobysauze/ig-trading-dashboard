@@ -13,6 +13,7 @@ type Signal = {
   candlestick_patterns: Array<{name: string; type: string; confidence: number}>;
   chart_patterns: Array<{name: string; type: string; confidence: number}>;
   news_headlines: Array<{title: string; sentiment: number; impact: string}>;
+  trade_rating?: string;
 }
 
 type ScanData = {
