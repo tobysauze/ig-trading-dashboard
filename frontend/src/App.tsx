@@ -120,9 +120,15 @@ function App() {
 
   const startScan = async (fullScan = false) => {
     setScanning(true)
-    setProgress({ status: 'running', completed: 0, total: fullScan ? 248 : 50, current: '' })
+    setProgress({ status: 'running', completed: 0, total: fullScan ? 248 : 20, current: '' })
+    const pollInterval = setInterval(async () => {
+      try {
+        const p = await fetch(`${API_BASE}/api/scan/progress`)
+        if (p.ok) { const prog = await p.json(); setProgress(prog) }
+      } catch {}
+    }, 2000)
     try {
-      const limitParam = fullScan ? '' : '&limit=50'
+      const limitParam = fullScan ? '' : '&limit=20'
       const r = await fetch(`${API_BASE}/api/scan?scan_mode=${scanMode}${limitParam}`, {
         method: 'POST',
         signal: AbortSignal.timeout(fullScan ? 900000 : 300000),
@@ -134,6 +140,7 @@ function App() {
     } catch (e: any) {
       console.error('Scan error:', e)
     }
+    clearInterval(pollInterval)
     setScanning(false)
     setProgress({ status: 'completed', completed: 0, total: 0, current: '' })
   }
@@ -190,7 +197,7 @@ function App() {
           </div>
           <input type="number" value={accountSize} onChange={e => setAccountSize(Number(e.target.value))} style={{ width: 90, background: '#1f2937', border: '1px solid #374151', color: '#e5e7eb', padding: '6px 8px', borderRadius: 4, fontSize: 13 }} placeholder="Account $" title="Account size" />
           <input type="number" value={riskPct} onChange={e => setRiskPct(Number(e.target.value))} step={0.5} min={0.5} max={5} style={{ width: 60, background: '#1f2937', border: '1px solid #374151', color: '#e5e7eb', padding: '6px 8px', borderRadius: 4, fontSize: 13 }} placeholder="Risk%" title="Risk %" />
-          <button style={S.btn('#2563eb')} onClick={() => startScan(false)} disabled={scanning}>{scanning ? 'Scanning...' : 'Quick Scan (50)'}</button>
+          <button style={S.btn('#2563eb')} onClick={() => startScan(false)} disabled={scanning}>{scanning ? 'Scanning...' : 'Quick Scan (20)'}</button>
           <button style={S.btnOutline} onClick={() => startScan(true)} disabled={scanning}>Full Scan (248)</button>
         </div>
       </header>
