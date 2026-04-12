@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://ig-trading-dashboard.onrender.com'
 
 type Signal = {
   name: string; epic: string; yahoo: string; market_type: string;
