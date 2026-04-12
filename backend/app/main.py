@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
+import threading
 from datetime import datetime
 from contextlib import asynccontextmanager
 
@@ -36,16 +37,26 @@ async def health():
     return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
 
 
+_scan_lock = threading.Lock()
+
+
 @app.post("/api/scan")
 def start_scan(scan_mode: str = Query("swing"), limit: int = Query(0)):
-    try:
-        from app.services.scanner import run_scan
-        result = run_scan(scan_mode, limit=limit)
-        return _sanitize(result)
-    except Exception as e:
-        import traceback
-        print(f"SCAN ERROR: {traceback.format_exc()}")
-        return {"error": str(e)}
+    from app.services.scanner import run_scan, get_scan_progress
+    progress = get_scan_progress()
+    if progress.get("status") == "running":
+        return {"status": "already_running", "message": "Scan already in progress"}
+
+    def _run():
+        try:
+            run_scan(scan_mode, limit=limit)
+        except Exception as e:
+            import traceback
+            print(f"SCAN ERROR: {traceback.format_exc()}")
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    return {"status": "started", "message": "Scan started in background. Poll /api/scan/progress then fetch /api/scan/latest when complete."}
 
 
 @app.post("/api/scan/selected")

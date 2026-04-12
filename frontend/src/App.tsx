@@ -120,29 +120,43 @@ function App() {
 
   const startScan = async (fullScan = false) => {
     setScanning(true)
-    setProgress({ status: 'running', completed: 0, total: fullScan ? 248 : 20, current: '' })
-    const pollInterval = setInterval(async () => {
-      try {
-        const p = await fetch(`${API_BASE}/api/scan/progress`)
-        if (p.ok) { const prog = await p.json(); setProgress(prog) }
-      } catch {}
-    }, 2000)
+    setProgress({ status: 'running', completed: 0, total: fullScan ? 248 : 20, current: 'Starting...' })
+
+    // Fire-and-forget: backend starts scan in a background thread and returns immediately
     try {
       const limitParam = fullScan ? '' : '&limit=20'
-      const r = await fetch(`${API_BASE}/api/scan?scan_mode=${scanMode}${limitParam}`, {
-        method: 'POST',
-        signal: AbortSignal.timeout(fullScan ? 900000 : 300000),
-      })
-      if (r.ok) {
-        const data = await r.json()
-        if (data.signals) setScan(data)
-      }
+      await fetch(`${API_BASE}/api/scan?scan_mode=${scanMode}${limitParam}`, { method: 'POST' })
     } catch (e: any) {
-      console.error('Scan error:', e)
+      console.error('Failed to start scan:', e)
+      setScanning(false)
+      return
     }
-    clearInterval(pollInterval)
+
+    // Poll progress every 2s until scan completes, then fetch results
+    await new Promise<void>(resolve => {
+      const pollInterval = setInterval(async () => {
+        try {
+          const p = await fetch(`${API_BASE}/api/scan/progress`)
+          if (p.ok) {
+            const prog = await p.json()
+            setProgress(prog)
+            if (prog.status === 'completed') {
+              clearInterval(pollInterval)
+              resolve()
+            }
+          }
+        } catch {}
+      }, 2000)
+    })
+
+    try {
+      const r = await fetch(`${API_BASE}/api/scan/latest`)
+      if (r.ok) { const data = await r.json(); if (data.signals) setScan(data) }
+    } catch (e: any) {
+      console.error('Failed to fetch scan results:', e)
+    }
     setScanning(false)
-    setProgress({ status: 'completed', completed: 0, total: 0, current: '' })
+    setProgress({ status: 'idle', completed: 0, total: 0, current: '' })
   }
 
   const openDetail = async (sig: Signal) => {
