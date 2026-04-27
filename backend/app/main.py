@@ -252,15 +252,25 @@ async def journal_risk_of_ruin(account_size: float = Query(1000)):
     return trade_journal.get_risk_of_ruin(account_size)
 
 
+import math
+import numpy as np
+
+
 def _sanitize(obj):
     if isinstance(obj, dict):
         return {k: _sanitize(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
+    if isinstance(obj, (list, tuple)):
         return [_sanitize(i) for i in obj]
-    elif isinstance(obj, float):
+    if isinstance(obj, np.bool_):
+        return bool(obj)
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating):
+        v = float(obj)
+        return None if math.isnan(v) or math.isinf(v) else v
+    if isinstance(obj, np.ndarray):
+        return _sanitize(obj.tolist())
+    if isinstance(obj, float):
         if math.isnan(obj) or math.isinf(obj):
             return None
     return obj
-
-
-import math
